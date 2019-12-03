@@ -6,6 +6,7 @@ package com.alicp.jetcache.anno.aop;
 import com.alicp.jetcache.anno.method.CacheConfigUtil;
 import com.alicp.jetcache.anno.method.CacheInvokeConfig;
 import com.alicp.jetcache.anno.method.ClassUtil;
+import com.alicp.jetcache.anno.support.CacheNameGenerator;
 import com.alicp.jetcache.anno.support.ConfigMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import org.springframework.asm.Type;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:areyouok@gmail.com">huangli</a>
@@ -25,6 +27,8 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
 
     private ConfigMap cacheConfigMap;
     private String[] basePackages;
+
+    private CacheNameGenerator cacheNameGenerator;
 
     public CachePointcut(String[] basePackages) {
         setClassFilter(this);
@@ -141,7 +145,8 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
                 cacheConfigMap.putByMethodInfo(key, CacheInvokeConfig.getNoCacheInvokeConfigInstance());
                 return false;
             } else {
-                cacheConfigMap.putByMethodInfo(key, cac);
+                Supplier<String> autogenerateNameFunc = () -> cacheNameGenerator.generateCacheName(method, targetClass);
+                cacheConfigMap.putByMethodInfo(key, cac, autogenerateNameFunc);
                 return true;
             }
         }
@@ -204,4 +209,10 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
     public void setCacheConfigMap(ConfigMap cacheConfigMap) {
         this.cacheConfigMap = cacheConfigMap;
     }
+
+    public void setCacheNameGenerator(CacheNameGenerator cacheNameGenerator) {
+        this.cacheNameGenerator = cacheNameGenerator;
+    }
+
+
 }

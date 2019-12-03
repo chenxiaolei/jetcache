@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
  */
 public interface CacheNameGenerator {
 
-    String generateCacheName(Method method, Object targetObject);
+    String generateCacheName(Method method, Class targetClass);
 
     String generateCacheName(Field field);
 }

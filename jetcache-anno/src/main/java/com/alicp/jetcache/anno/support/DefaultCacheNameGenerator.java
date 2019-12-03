@@ -24,7 +24,7 @@ public class DefaultCacheNameGenerator implements CacheNameGenerator {
     }
 
     @Override
-    public String generateCacheName(Method method, Object targetObject) {
+    public String generateCacheName(Method method, Class targetClass) {
         String cacheName = cacheNameMap.get(method);
 
         if (cacheName == null) {

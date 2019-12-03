@@ -6,7 +6,7 @@
     <groupId>com.alicp.jetcache</groupId>
     <artifactId>jetcache-parent</artifactId>
     <packaging>pom</packaging>
-    <version>2.6.0.M4-SNAPSHOT</version>
+    <version>2.6.0.M4-SNAPSHOT-CL</version>
 
     <name>jetcache</name>
     <description>a Java cache abstraction which provides consistent use for various caching solutions</description>
@@ -378,12 +378,24 @@
         <connection>scm:git:https://github.com/alibaba/jetcache.git</connection>
         <url>https://github.com/alibaba/jetcache</url>
     </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>kf-snapshots</id>
+            <url>http://nexus.kefen.site:7300/repository/maven-snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>kf-releases</id>
+            <url>http://nexus.kefen.site:7300/repository/maven-releases/</url>
+        </repository>
+    </distributionManagement>
+
     <profiles>
         <profile>
             <id>release</id>
             <build>
                 <plugins>
-                    <plugin>
+                    <!--<plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>1.6</version>
@@ -395,10 +407,10 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
+                    </plugin>-->
                 </plugins>
             </build>
-            <distributionManagement>
+            <!--<distributionManagement>
                 <snapshotRepository>
                     <id>oss</id>
                     <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
@@ -407,7 +419,8 @@
                     <id>oss</id>
                     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                 </repository>
-            </distributionManagement>
+            </distributionManagement>-->
+
         </profile>
     </profiles>
     <repositories>

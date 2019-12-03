@@ -53,10 +53,11 @@ public class CacheContext {
                 if (cacheAnnoConfig instanceof CachedAnnoConfig) {
                     cache = createCacheByCachedConfig((CachedAnnoConfig) cacheAnnoConfig, invokeContext);
                 } else if ((cacheAnnoConfig instanceof CacheInvalidateAnnoConfig) || (cacheAnnoConfig instanceof CacheUpdateAnnoConfig)) {
-                    CacheInvokeConfig cacheDefineConfig = configMap.getByCacheName(cacheAnnoConfig.getArea(), cacheAnnoConfig.getName());
+                    String cacheName = getOrGenerateCacheName(cacheAnnoConfig.getName(),invokeContext);
+                    CacheInvokeConfig cacheDefineConfig = configMap.getByCacheName(cacheAnnoConfig.getArea(), cacheName);
                     if (cacheDefineConfig == null) {
                         String message = "can't find @Cached definition with area=" + cacheAnnoConfig.getArea()
-                                + " name=" + cacheAnnoConfig.getName() +
+                                + " name=" + cacheName +
                                 ", specified in " + cacheAnnoConfig.getDefineMethod();
                         CacheConfigException e = new CacheConfigException(message);
                         logger.error("Cache operation aborted because can't find @Cached definition", e);
@@ -71,14 +72,17 @@ public class CacheContext {
         return c;
     }
 
+    private String getOrGenerateCacheName(String cacheName, CacheInvokeContext invokeContext) {
+        if (CacheConsts.isUndefined(cacheName)) {
+            return configProvider.createCacheNameGenerator(invokeContext.getHiddenPackages())
+                    .generateCacheName(invokeContext.getMethod(), invokeContext.getTargetObject().getClass());
+        }
+        return cacheName;
+    }
+
     private Cache createCacheByCachedConfig(CachedAnnoConfig ac, CacheInvokeContext invokeContext) {
         String area = ac.getArea();
-        String cacheName = ac.getName();
-        if (CacheConsts.isUndefined(cacheName)) {
-
-            cacheName = configProvider.createCacheNameGenerator(invokeContext.getHiddenPackages())
-                    .generateCacheName(invokeContext.getMethod(), invokeContext.getTargetObject());
-        }
+        String cacheName = getOrGenerateCacheName(ac.getName(),invokeContext);
         Cache cache = __createOrGetCache(ac, area, cacheName);
         return cache;
     }

@@ -3,6 +3,8 @@ package com.alicp.jetcache.anno.support;
 import com.alicp.jetcache.support.CacheMessagePublisher;
 import com.alicp.jetcache.support.StatInfo;
 import com.alicp.jetcache.support.StatInfoLogger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 
 import javax.annotation.Resource;
 import java.util.function.Consumer;
@@ -17,6 +19,10 @@ public class ConfigProvider extends AbstractLifecycle {
 
     @Resource
     protected GlobalCacheConfig globalCacheConfig;
+
+    @Autowired(required = false)
+    @Lazy(false)
+    private CacheNameGenerator cacheNameGenerator;
 
     protected SimpleCacheManager cacheManager;
     protected EncoderParser encoderParser;
@@ -91,7 +97,15 @@ public class ConfigProvider extends AbstractLifecycle {
     }
 
     public CacheNameGenerator createCacheNameGenerator(String[] hiddenPackages) {
-        return new DefaultCacheNameGenerator(hiddenPackages);
+        if (cacheNameGenerator == null) {
+            cacheNameGenerator = new DefaultCacheNameGenerator(hiddenPackages);
+        }
+        return cacheNameGenerator;
+    }
+
+
+    public void setCacheNameGenerator(CacheNameGenerator cacheNameGenerator) {
+        this.cacheNameGenerator = cacheNameGenerator;
     }
 
     protected CacheContext newContext() {
