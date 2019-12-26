@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisSentinelPool;
@@ -67,10 +68,10 @@ public class RedisAutoConfiguration {
                 slavesPool = new Pool[slaveNames.size()];
                 slavesPoolWeights = new int[slaveNames.size()];
                 int i = 0;
-                for (String slaveName: slaveNames) {
+                for (String slaveName : slaveNames) {
                     ConfigTree slaveConfig = slaves.subTree(slaveName + ".");
                     slavesPool[i] = parsePool(slaveConfig);
-                    slavesPoolWeights[i] = Integer.parseInt(slaveConfig.getProperty("weight","100"));
+                    slavesPoolWeights[i] = Integer.parseInt(slaveConfig.getProperty("weight", "100"));
                     i++;
                 }
             }
@@ -93,9 +94,10 @@ public class RedisAutoConfiguration {
             GenericObjectPoolConfig poolConfig = parsePoolConfig(ct);
 
             String host = ct.getProperty("host", (String) null);
-            int port = Integer.parseInt(ct.getProperty("port", "0"));
+            int port = Integer.parseInt(ct.getProperty("port", "6379"));
             int timeout = Integer.parseInt(ct.getProperty("timeout", String.valueOf(Protocol.DEFAULT_TIMEOUT)));
             String password = ct.getProperty("password", (String) null);
+            password = StringUtils.hasText(password) ? password : null;
             int database = Integer.parseInt(ct.getProperty("database", String.valueOf(Protocol.DEFAULT_DATABASE)));
             String clientName = ct.getProperty("clientName", (String) null);
             boolean ssl = Boolean.parseBoolean(ct.getProperty("ssl", "false"));
