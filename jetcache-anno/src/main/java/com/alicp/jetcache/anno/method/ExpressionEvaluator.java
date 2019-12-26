@@ -101,7 +101,7 @@ class SpelEvaluator implements Function<Object, Object> {
             try {
                 Constructor<SpelParserConfiguration> c = SpelParserConfiguration.class
                         .getConstructor(modeClass, ClassLoader.class);
-                Object mode = modeClass.getField("IMMEDIATE").get(null);
+                Object mode = modeClass.getField("OFF").get(null);
                 SpelParserConfiguration config = c.newInstance(mode, SpelEvaluator.class.getClassLoader());
                 parser = new SpelExpressionParser(config);
             } catch (Exception e) {
