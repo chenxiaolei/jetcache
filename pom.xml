@@ -381,7 +381,7 @@
     <profiles>
         <profile>
             <id>release</id>
-            <build>
+            <!--<build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -397,15 +397,15 @@
                         </executions>
                     </plugin>
                 </plugins>
-            </build>
+            </build>-->
             <distributionManagement>
                 <snapshotRepository>
-                    <id>oss</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+                    <id>kf-snapshots</id>
+                    <url>http://nexus.kefen.site:7300/repository/maven-snapshots/</url>
                 </snapshotRepository>
                 <repository>
-                    <id>oss</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                    <id>kf-releases</id>
+                    <url>http://nexus.kefen.site:7300/repository/maven-releases/</url>
                 </repository>
             </distributionManagement>
         </profile>
