@@ -24,6 +24,8 @@ public class ConfigMap {
                 String newName = autogenerateNameFunc.get();
                 cac.setName(newName);
                 cacheNameMap.put(cac.getArea() + "_" + newName, config);
+            }else{
+                cacheNameMap.put(cac.getArea() + "_" + cac.getName(), config);
             }
         }
     }
