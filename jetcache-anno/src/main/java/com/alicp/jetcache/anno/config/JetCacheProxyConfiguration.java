@@ -16,7 +16,7 @@ import org.springframework.core.type.AnnotationMetadata;
 /**
  * Created on 2016/11/16.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 @Configuration
 public class JetCacheProxyConfiguration implements ImportAware, ApplicationContextAware {
@@ -43,7 +43,6 @@ public class JetCacheProxyConfiguration implements ImportAware, ApplicationConte
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public CacheAdvisor jetcacheAdvisor(JetCacheInterceptor jetCacheInterceptor) {
         CacheAdvisor advisor = new CacheAdvisor();
-        advisor.setAdviceBeanName(CacheAdvisor.CACHE_ADVISOR_BEAN_NAME);
         advisor.setAdvice(jetCacheInterceptor);
         advisor.setBasePackages(this.enableMethodCache.getStringArray("basePackages"));
         advisor.setOrder(this.enableMethodCache.<Integer>getNumber("order"));

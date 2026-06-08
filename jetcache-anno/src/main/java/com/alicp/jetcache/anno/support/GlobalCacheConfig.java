@@ -5,18 +5,32 @@ package com.alicp.jetcache.anno.support;
 
 import com.alicp.jetcache.CacheBuilder;
 
+import java.util.List;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class GlobalCacheConfig {
 
     private String[] hiddenPackages;
     protected int statIntervalMinutes;
-    private boolean areaInCacheName = true;
+    /**
+     * for compatible reason. This property controls whether add area as remote cache key prefix.
+     * version<=2.4.3: add cache area in prefix, no config.
+     * version>2.4.3 and version <2.7: default value is true, keep same as 2.4.3 if not set.
+     * version>=2.7.0.RC: default value is false.
+     *
+     * remove in the future.
+     */
+    @Deprecated
+    private boolean areaInCacheName = false;
     private boolean penetrationProtect = false;
     private boolean enableMethodCache = true;
+    private boolean useDefaultLocalExpireInMultiLevelCache = false;
+    private boolean decodeFilterEnabled = true;
+    private List<String> decodeFilterAllowPatterns;
+    private List<String> decodeFilterDenyPatterns;
 
     private Map<String, CacheBuilder> localCacheBuilders;
     private Map<String, CacheBuilder> remoteCacheBuilders;
@@ -56,10 +70,28 @@ public class GlobalCacheConfig {
         this.statIntervalMinutes = statIntervalMinutes;
     }
 
+    /**
+     * for compatible reason. This property controls whether add area as remote cache key prefix.
+     * version<=2.4.3: add cache area in prefix, no config.
+     * version>2.4.3 and version <2.7: default value is true, keep same as 2.4.3 if not set.
+     * version>=2.7.0.RC: default value is false.
+     *
+     * remove in the future.
+     */
+    @Deprecated
     public boolean isAreaInCacheName() {
         return areaInCacheName;
     }
 
+    /**
+     * for compatible reason. This property controls whether add area as remote cache key prefix.
+     * version<=2.4.3: add cache area in prefix, no config.
+     * version>2.4.3 and version <2.7: default value is true, keep same as 2.4.3 if not set.
+     * version>=2.7.0.RC: default value is false.
+     *
+     * remove in the future.
+     */
+    @Deprecated
     public void setAreaInCacheName(boolean areaInCacheName) {
         this.areaInCacheName = areaInCacheName;
     }
@@ -79,4 +111,37 @@ public class GlobalCacheConfig {
     public void setEnableMethodCache(boolean enableMethodCache) {
         this.enableMethodCache = enableMethodCache;
     }
+
+    public boolean isUseDefaultLocalExpireInMultiLevelCache() {
+        return useDefaultLocalExpireInMultiLevelCache;
+    }
+
+    public void setUseDefaultLocalExpireInMultiLevelCache(boolean useDefaultLocalExpireInMultiLevelCache) {
+        this.useDefaultLocalExpireInMultiLevelCache = useDefaultLocalExpireInMultiLevelCache;
+    }
+
+    public boolean isDecodeFilterEnabled() {
+        return decodeFilterEnabled;
+    }
+
+    public void setDecodeFilterEnabled(boolean decodeFilterEnabled) {
+        this.decodeFilterEnabled = decodeFilterEnabled;
+    }
+
+    public List<String> getDecodeFilterAllowPatterns() {
+        return decodeFilterAllowPatterns;
+    }
+
+    public void setDecodeFilterAllowPatterns(List<String> decodeFilterAllowPatterns) {
+        this.decodeFilterAllowPatterns = decodeFilterAllowPatterns;
+    }
+
+    public List<String> getDecodeFilterDenyPatterns() {
+        return decodeFilterDenyPatterns;
+    }
+
+    public void setDecodeFilterDenyPatterns(List<String> decodeFilterDenyPatterns) {
+        this.decodeFilterDenyPatterns = decodeFilterDenyPatterns;
+    }
+
 }

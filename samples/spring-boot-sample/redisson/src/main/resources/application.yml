@@ -1,0 +1,24 @@
+jetcache:
+  statIntervalMinutes: 1
+  areaInCacheName: false
+  decodeFilterAllowPatterns:
+    - jetcache.samples.
+  local:
+    default:
+      type: linkedhashmap
+      keyConvertor: fastjson2
+  remote:
+    default:
+      type: redisson
+      keyConvertor: fastjson2
+      broadcastChannel: projectA
+      keyPrefix: projectA
+      valueEncoder: java
+      valueDecoder: java
+      defaultExpireInMillis: 5000
+spring:
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 1000

@@ -3,9 +3,6 @@
  */
 package com.alicp.jetcache.anno.support;
 
-import com.alicp.jetcache.CacheConfigException;
-import com.alicp.jetcache.anno.KeyConvertor;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -13,7 +10,7 @@ import org.springframework.context.ApplicationContextAware;
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class DefaultSpringKeyConvertorParser extends DefaultKeyConvertorParser implements ApplicationContextAware {
 

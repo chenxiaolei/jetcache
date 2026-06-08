@@ -1,14 +1,18 @@
 package com.alicp.jetcache;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * Created on 16/9/13.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class MultiLevelCache<K, V> extends AbstractCache<K, V> {
 
@@ -248,6 +252,7 @@ public class MultiLevelCache<K, V> extends AbstractCache<K, V> {
 
     @Override
     public void close() {
+        super.close();
         for (Cache c : caches) {
             c.close();
         }

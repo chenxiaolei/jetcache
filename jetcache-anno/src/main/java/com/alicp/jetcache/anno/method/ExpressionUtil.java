@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 class ExpressionUtil {
 
@@ -62,7 +62,7 @@ class ExpressionUtil {
                 if (CacheConsts.isUndefined(keyScript)) {
                     cac.setKeyEvaluator(o -> {
                         CacheInvokeContext c = (CacheInvokeContext) o;
-                        return c.getArgs() == null ? "_$JETCACHE_NULL_KEY$_" : c.getArgs();
+                        return c.getArgs() == null || c.getArgs().length == 0 ? "_$JETCACHE_NULL_KEY$_" : c.getArgs();
                     });
                 } else {
                     ExpressionEvaluator e = new ExpressionEvaluator(keyScript, cac.getDefineMethod());

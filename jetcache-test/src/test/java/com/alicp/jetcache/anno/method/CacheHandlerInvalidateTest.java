@@ -4,13 +4,16 @@
 package com.alicp.jetcache.anno.method;
 
 import com.alicp.jetcache.Cache;
+import com.alicp.jetcache.CacheManager;
 import com.alicp.jetcache.anno.CacheConsts;
 import com.alicp.jetcache.anno.support.CacheInvalidateAnnoConfig;
 import com.alicp.jetcache.anno.support.ConfigMap;
 import com.alicp.jetcache.anno.support.ConfigProvider;
 import com.alicp.jetcache.anno.support.GlobalCacheConfig;
+import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
 import com.alicp.jetcache.embedded.LinkedHashMapCacheBuilder;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
+import com.alicp.jetcache.test.anno.TestUtil;
 import com.alicp.jetcache.testsupport.CountClass;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,10 +27,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class CacheHandlerInvalidateTest {
     private ConfigProvider configProvider;
+    private CacheManager cacheManager;
     private CacheInvokeConfig cacheInvokeConfig;
     private CountClass count;
     private Cache cache;
@@ -38,12 +42,13 @@ public class CacheHandlerInvalidateTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        GlobalCacheConfig globalCacheConfig = new GlobalCacheConfig();
+        GlobalCacheConfig globalCacheConfig = TestUtil.createGloableConfig();
         configProvider = new ConfigProvider();
         configProvider.setGlobalCacheConfig(globalCacheConfig);
         configProvider.init();
+        cacheManager = new JetCacheBaseBeans().cacheManager(configProvider);
         cache = LinkedHashMapCacheBuilder.createLinkedHashMapCacheBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .buildCache();
 
 
@@ -54,7 +59,7 @@ public class CacheHandlerInvalidateTest {
         count = new CountClass();
 
         method = CountClass.class.getMethod("update", String.class, int.class);
-        cacheInvokeContext = configProvider.getCacheContext().createCacheInvokeContext(configMap);
+        cacheInvokeContext = configProvider.newContext(cacheManager).createCacheInvokeContext(configMap);
         cacheInvokeContext.setCacheInvokeConfig(cacheInvokeConfig);
 
 

@@ -8,14 +8,19 @@ import java.io.ByteArrayInputStream;
 /**
  * Created on 2016/10/4.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * Since 2.8.0 the com.esotericsoftware:kryo should be 5+, kryo4 is not supported.
+ *
+ * @author huangli
  */
 public class KryoValueDecoder extends AbstractValueDecoder {
 
-    public static final KryoValueDecoder INSTANCE = new KryoValueDecoder(true);
+    public static final KryoValueDecoder INSTANCE = new KryoValueDecoder(true, KryoValueEncoder.DEFAULT_POOL);
 
-    public KryoValueDecoder(boolean useIdentityNumber) {
+    private final ObjectPool<KryoValueEncoder.KryoCache> pool;
+
+    public KryoValueDecoder(boolean useIdentityNumber, ObjectPool<KryoValueEncoder.KryoCache> pool) {
         super(useIdentityNumber);
+        this.pool = pool;
     }
 
     @Override
@@ -27,16 +32,24 @@ public class KryoValueDecoder extends AbstractValueDecoder {
             in = new ByteArrayInputStream(buffer);
         }
         Input input = new Input(in);
-        Kryo kryo = (Kryo) KryoValueEncoder.kryoThreadLocal.get()[0];
-        ClassLoader classLoader = KryoValueDecoder.class.getClassLoader();
-        Thread t = Thread.currentThread();
-        if (t != null) {
-            ClassLoader ctxClassLoader = t.getContextClassLoader();
-            if (ctxClassLoader != null) {
-                classLoader = ctxClassLoader;
+        KryoValueEncoder.KryoCache kryoCache = null;
+        try {
+            kryoCache =  pool.borrowObject();
+            Kryo kryo = kryoCache.getKryo();
+            ClassLoader classLoader = KryoValueDecoder.class.getClassLoader();
+            Thread t = Thread.currentThread();
+            if (t != null) {
+                ClassLoader ctxClassLoader = t.getContextClassLoader();
+                if (ctxClassLoader != null) {
+                    classLoader = ctxClassLoader;
+                }
+            }
+            kryo.setClassLoader(classLoader);
+            return kryo.readClassAndObject(input);
+        }finally {
+            if(kryoCache != null){
+                pool.returnObject(kryoCache);
             }
         }
-        kryo.setClassLoader(classLoader);
-        return kryo.readClassAndObject(input);
     }
 }

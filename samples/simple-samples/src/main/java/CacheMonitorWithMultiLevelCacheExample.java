@@ -2,15 +2,15 @@ import com.alicp.jetcache.Cache;
 import com.alicp.jetcache.MultiLevelCacheBuilder;
 import com.alicp.jetcache.embedded.CaffeineCacheBuilder;
 import com.alicp.jetcache.support.DefaultCacheMonitor;
-import com.alicp.jetcache.support.DefaultCacheMonitorManager;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import com.alicp.jetcache.support.DefaultMetricsManager;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created on 2016/11/2.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class CacheMonitorWithMultiLevelCacheExample {
     public static void main(String[] args) throws Exception {
@@ -20,13 +20,13 @@ public class CacheMonitorWithMultiLevelCacheExample {
         Cache<String, Integer> l1Cache = CaffeineCacheBuilder.createCaffeineCacheBuilder()
                 .limit(100)
                 .expireAfterWrite(200, TimeUnit.SECONDS)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .addMonitor(l1CacheMonitor)
                 .buildCache();
         Cache<String, Integer> l2Cache = CaffeineCacheBuilder.createCaffeineCacheBuilder()
                 .limit(100)
                 .expireAfterWrite(200, TimeUnit.SECONDS)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .addMonitor(l2CacheMonitor)
                 .buildCache();
 
@@ -36,7 +36,7 @@ public class CacheMonitorWithMultiLevelCacheExample {
                 .buildCache();
 
         boolean verboseLog = true;
-        DefaultCacheMonitorManager statLogger = new DefaultCacheMonitorManager(1, TimeUnit.SECONDS, verboseLog);
+        DefaultMetricsManager statLogger = new DefaultMetricsManager(1, TimeUnit.SECONDS, verboseLog);
         statLogger.add(l1CacheMonitor, l2CacheMonitor, orderCacheMonitor);
         statLogger.start();
 

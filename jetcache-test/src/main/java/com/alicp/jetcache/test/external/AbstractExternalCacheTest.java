@@ -3,12 +3,12 @@ package com.alicp.jetcache.test.external;
 import com.alicp.jetcache.test.AbstractCacheTest;
 import com.alicp.jetcache.test.support.DynamicQuery;
 import com.alicp.jetcache.test.support.DynamicQueryWithEquals;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Created on 2016/12/30.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class AbstractExternalCacheTest extends AbstractCacheTest {
     protected void nullKeyConvertorTest() {
@@ -23,8 +23,8 @@ public class AbstractExternalCacheTest extends AbstractCacheTest {
             d2.setName("HL");
 
             cache.put(d1, "V1");
-            Assert.assertEquals("V1", cache.get(d2));
-            Assert.assertNull(cache.get(d3));
+            Assertions.assertEquals("V1", cache.get(d2));
+            Assertions.assertNull(cache.get(d3));
         }
 
         {
@@ -38,8 +38,8 @@ public class AbstractExternalCacheTest extends AbstractCacheTest {
             d2.setName("HL2");
 
             cache.put(d1, "V2");
-            Assert.assertNull("V2", cache.get(d2));
-            Assert.assertNull(cache.get(d3));
+            Assertions.assertNull(cache.get(d2));
+            Assertions.assertNull(cache.get(d3));
         }
     }
 }

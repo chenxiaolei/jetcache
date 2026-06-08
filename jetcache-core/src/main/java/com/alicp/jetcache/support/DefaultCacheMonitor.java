@@ -4,24 +4,35 @@ import com.alicp.jetcache.CacheGetResult;
 import com.alicp.jetcache.CacheMonitor;
 import com.alicp.jetcache.CacheResult;
 import com.alicp.jetcache.MultiGetResult;
-import com.alicp.jetcache.event.*;
+import com.alicp.jetcache.event.CacheEvent;
+import com.alicp.jetcache.event.CacheGetAllEvent;
+import com.alicp.jetcache.event.CacheGetEvent;
+import com.alicp.jetcache.event.CacheLoadAllEvent;
+import com.alicp.jetcache.event.CacheLoadEvent;
+import com.alicp.jetcache.event.CachePutAllEvent;
+import com.alicp.jetcache.event.CachePutEvent;
+import com.alicp.jetcache.event.CacheRemoveAllEvent;
+import com.alicp.jetcache.event.CacheRemoveEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created on 2016/10/27.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class DefaultCacheMonitor implements CacheMonitor {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultCacheMonitor.class);
 
+    private final ReentrantLock reentrantLock = new ReentrantLock();
     protected CacheStat cacheStat;
     private String cacheName;
+    private long epoch;
 
     public DefaultCacheMonitor(String cacheName) {
         if (cacheName == null) {
@@ -36,43 +47,63 @@ public class DefaultCacheMonitor implements CacheMonitor {
     }
 
     public void resetStat() {
-        cacheStat = new CacheStat();
-        cacheStat.setStatStartTime(System.currentTimeMillis());
-        cacheStat.setCacheName(cacheName);
+        reentrantLock.lock();
+        try {
+            cacheStat = new CacheStat();
+            cacheStat.setStatStartTime(System.currentTimeMillis());
+            cacheStat.setCacheName(cacheName);
+            Epoch.increment();
+            epoch = Epoch.get();
+        }finally {
+            reentrantLock.unlock();
+        }
     }
 
-    public synchronized CacheStat getCacheStat() {
-        CacheStat stat = cacheStat.clone();
-        stat.setStatEndTime(System.currentTimeMillis());
-        return stat;
+    public CacheStat getCacheStat() {
+        reentrantLock.lock();
+        try {
+            CacheStat stat = cacheStat.clone();
+            stat.setStatEndTime(System.currentTimeMillis());
+            return stat;
+        }finally {
+            reentrantLock.unlock();
+        }
     }
 
     @Override
-    public synchronized void afterOperation(CacheEvent event) {
-        if (event instanceof CacheGetEvent) {
-            CacheGetEvent e = (CacheGetEvent) event;
-            afterGet(e.getMillis(), e.getKey(), e.getResult());
-        } else if (event instanceof CachePutEvent) {
-            CachePutEvent e = (CachePutEvent) event;
-            afterPut(e.getMillis(), e.getKey(), e.getValue(), e.getResult());
-        } else if (event instanceof CacheRemoveEvent) {
-            CacheRemoveEvent e = (CacheRemoveEvent) event;
-            afterRemove(e.getMillis(), e.getKey(), e.getResult());
-        } else if (event instanceof CacheLoadEvent) {
-            CacheLoadEvent e = (CacheLoadEvent) event;
-            afterLoad(e.getMillis(), e.getKey(), e.getLoadedValue(), e.isSuccess());
-        } else if (event instanceof CacheGetAllEvent) {
-            CacheGetAllEvent e = (CacheGetAllEvent) event;
-            afterGetAll(e.getMillis(), e.getKeys(), e.getResult());
-        } else if (event instanceof CacheLoadAllEvent) {
-            CacheLoadAllEvent e = (CacheLoadAllEvent) event;
-            afterLoadAll(e.getMillis(), e.getKeys(), e.getLoadedValue(), e.isSuccess());
-        } else if (event instanceof CachePutAllEvent) {
-            CachePutAllEvent e = (CachePutAllEvent) event;
-            afterPutAll(e.getMillis(), e.getMap(), e.getResult());
-        } else if (event instanceof CacheRemoveAllEvent) {
-            CacheRemoveAllEvent e = (CacheRemoveAllEvent) event;
-            afterRemoveAll(e.getMillis(), e.getKeys(), e.getResult());
+    public void afterOperation(CacheEvent event) {
+        reentrantLock.lock();
+        try {
+            if (event.getEpoch() < epoch) {
+                return;
+            }
+            if (event instanceof CacheGetEvent) {
+                CacheGetEvent e = (CacheGetEvent) event;
+                afterGet(e.getMillis(), e.getKey(), e.getResult());
+            } else if (event instanceof CachePutEvent) {
+                CachePutEvent e = (CachePutEvent) event;
+                afterPut(e.getMillis(), e.getKey(), e.getValue(), e.getResult());
+            } else if (event instanceof CacheRemoveEvent) {
+                CacheRemoveEvent e = (CacheRemoveEvent) event;
+                afterRemove(e.getMillis(), e.getKey(), e.getResult());
+            } else if (event instanceof CacheLoadEvent) {
+                CacheLoadEvent e = (CacheLoadEvent) event;
+                afterLoad(e.getMillis(), e.getKey(), e.getLoadedValue(), e.isSuccess());
+            } else if (event instanceof CacheGetAllEvent) {
+                CacheGetAllEvent e = (CacheGetAllEvent) event;
+                afterGetAll(e.getMillis(), e.getKeys(), e.getResult());
+            } else if (event instanceof CacheLoadAllEvent) {
+                CacheLoadAllEvent e = (CacheLoadAllEvent) event;
+                afterLoadAll(e.getMillis(), e.getKeys(), e.getLoadedValue(), e.isSuccess());
+            } else if (event instanceof CachePutAllEvent) {
+                CachePutAllEvent e = (CachePutAllEvent) event;
+                afterPutAll(e.getMillis(), e.getMap(), e.getResult());
+            } else if (event instanceof CacheRemoveAllEvent) {
+                CacheRemoveAllEvent e = (CacheRemoveAllEvent) event;
+                afterRemoveAll(e.getMillis(), e.getKeys(), e.getResult());
+            }
+        }finally {
+            reentrantLock.unlock();
         }
     }
 

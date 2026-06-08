@@ -4,18 +4,18 @@ import com.alicp.jetcache.support.JetCacheExecutor;
 
 import java.lang.ref.WeakReference;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created on 2017/2/28.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 class Cleaner {
 
-    static LinkedList<WeakReference<LinkedHashMapCache>> linkedHashMapCaches = new LinkedList<>();
+    static ConcurrentLinkedQueue<WeakReference<LinkedHashMapCache>> linkedHashMapCaches = new ConcurrentLinkedQueue<>();
 
     static {
         ScheduledExecutorService executorService = JetCacheExecutor.defaultExecutor();
@@ -23,22 +23,18 @@ class Cleaner {
     }
 
     static void add(LinkedHashMapCache cache) {
-        synchronized (linkedHashMapCaches) {
-            linkedHashMapCaches.add(new WeakReference<>(cache));
-        }
+        linkedHashMapCaches.add(new WeakReference<>(cache));
     }
 
     static void run() {
-        synchronized (linkedHashMapCaches) {
-            Iterator<WeakReference<LinkedHashMapCache>> it = linkedHashMapCaches.iterator();
-            while (it.hasNext()) {
-                WeakReference<LinkedHashMapCache> ref = it.next();
-                LinkedHashMapCache c = ref.get();
-                if (c == null) {
-                    it.remove();
-                } else {
-                    c.cleanExpiredEntry();
-                }
+        Iterator<WeakReference<LinkedHashMapCache>> it = linkedHashMapCaches.iterator();
+        while (it.hasNext()) {
+            WeakReference<LinkedHashMapCache> ref = it.next();
+            LinkedHashMapCache c = ref.get();
+            if (c == null) {
+                it.remove();
+            } else {
+                c.cleanExpiredEntry();
             }
         }
     }

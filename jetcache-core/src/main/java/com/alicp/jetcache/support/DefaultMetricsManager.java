@@ -3,8 +3,6 @@ package com.alicp.jetcache.support;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -12,24 +10,26 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
  * Created on 2016/10/31.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class DefaultMetricsManager {
     private static final Logger logger = LoggerFactory.getLogger(DefaultMetricsManager.class);
 
-    protected CopyOnWriteArrayList<DefaultCacheMonitor> monitorList = new CopyOnWriteArrayList();
+    protected final CopyOnWriteArrayList<DefaultCacheMonitor> monitorList = new CopyOnWriteArrayList();
 
     private ScheduledFuture<?> future;
 
-    private int resetTime;
-    private TimeUnit resetTimeUnit;
-    private Consumer<StatInfo> metricsCallback;
+    private final int resetTime;
+    private final TimeUnit resetTimeUnit;
+    private final Consumer<StatInfo> metricsCallback;
+    private final ReentrantLock reentrantLock = new ReentrantLock();
 
     public DefaultMetricsManager(int resetTime, TimeUnit resetTimeUnit, Consumer<StatInfo> metricsCallback) {
         this.resetTime = resetTime;
@@ -47,7 +47,7 @@ public class DefaultMetricsManager {
         this.metricsCallback = new StatInfoLogger(verboseLog);
     }
 
-    Runnable cmd = new Runnable() {
+    final Runnable cmd = new Runnable() {
         private long time = System.currentTimeMillis();
 
         @Override
@@ -73,32 +73,39 @@ public class DefaultMetricsManager {
         }
     };
 
-    @PostConstruct
-    public synchronized void start() {
-        if (future != null) {
-            return;
+
+    public void start() {
+        reentrantLock.lock();
+        try {
+            if (future != null) {
+                return;
+            }
+            long delay = firstDelay(resetTime, resetTimeUnit);
+            future = JetCacheExecutor.defaultExecutor().scheduleAtFixedRate(
+                    cmd, delay, resetTimeUnit.toMillis(resetTime), TimeUnit.MILLISECONDS);
+            logger.info("cache stat period at " + resetTime + " " + resetTimeUnit);
+        }finally {
+            reentrantLock.unlock();
         }
-        long delay = firstDelay(resetTime, resetTimeUnit);
-        future = JetCacheExecutor.defaultExecutor().scheduleAtFixedRate(
-                cmd, delay, resetTimeUnit.toMillis(resetTime), TimeUnit.MILLISECONDS);
-        logger.info("cache stat period at " + resetTime + " " + resetTimeUnit);
     }
 
-    @PreDestroy
-    public synchronized void stop() {
-        future.cancel(false);
-        logger.info("cache stat canceled");
-        future = null;
+    public void stop() {
+        reentrantLock.lock();
+        try {
+            future.cancel(false);
+            logger.info("cache stat canceled");
+            future = null;
+        }finally {
+            reentrantLock.unlock();
+        }
     }
 
-    public DefaultMetricsManager add(DefaultCacheMonitor... monitors) {
+    public void add(DefaultCacheMonitor... monitors) {
         monitorList.addAll(Arrays.asList(monitors));
-        return this;
     }
 
-    public DefaultMetricsManager remove(DefaultCacheMonitor... monitor) {
-        monitorList.remove(monitor);
-        return this;
+    public void clear() {
+        monitorList.clear();
     }
 
     protected static long firstDelay(int resetTime, TimeUnit resetTimeUnit) {

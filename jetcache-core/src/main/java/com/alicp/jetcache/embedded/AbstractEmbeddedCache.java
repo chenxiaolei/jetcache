@@ -10,17 +10,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public abstract class AbstractEmbeddedCache<K, V> extends AbstractCache<K, V> {
     protected EmbeddedCacheConfig<K, V> config;
     protected InnerMap innerMap;
 
     protected abstract InnerMap createAreaCache();
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     public AbstractEmbeddedCache(EmbeddedCacheConfig<K, V> config) {
         this.config = config;
@@ -55,7 +58,8 @@ public abstract class AbstractEmbeddedCache<K, V> extends AbstractCache<K, V> {
         } else if (now >= holder.getExpireTime()) {
             return CacheGetResult.EXPIRED_WITHOUT_MSG;
         } else {
-            synchronized (holder) {
+            lock.lock();
+            try{
                 long accessTime = holder.getAccessTime();
                 if (config.isExpireAfterAccess()) {
                     long expireAfterAccess = config.getExpireAfterAccessInMillis();
@@ -64,6 +68,8 @@ public abstract class AbstractEmbeddedCache<K, V> extends AbstractCache<K, V> {
                     }
                 }
                 holder.setAccessTime(now);
+            }finally {
+                lock.unlock();
             }
 
             return new CacheGetResult(CacheResultCode.SUCCESS, null, holder);
@@ -106,9 +112,6 @@ public abstract class AbstractEmbeddedCache<K, V> extends AbstractCache<K, V> {
             newKeyMap.put(buildKey(en.getKey()), cacheObject);
         }
         innerMap.putAllValues(newKeyMap);
-
-        final HashMap resultMap = new HashMap();
-        map.keySet().forEach((k) -> resultMap.put(k, CacheResultCode.SUCCESS));
         return CacheResult.SUCCESS_WITHOUT_MSG;
     }
 
@@ -123,9 +126,12 @@ public abstract class AbstractEmbeddedCache<K, V> extends AbstractCache<K, V> {
         Set newKeys = keys.stream().map((key) -> buildKey(key)).collect(Collectors.toSet());
         innerMap.removeAllValues(newKeys);
 
-        final HashMap resultMap = new HashMap();
-        keys.forEach((k) -> resultMap.put(k, CacheResultCode.SUCCESS));
         return CacheResult.SUCCESS_WITHOUT_MSG;
+    }
+
+    // internal method
+    public void __removeAll(Set<? extends K> keys) {
+        innerMap.removeAllValues(keys);
     }
 
     @Override

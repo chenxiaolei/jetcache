@@ -9,9 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class LinkedHashMapCache<K, V> extends AbstractEmbeddedCache<K, V> {
 
@@ -28,7 +29,7 @@ public class LinkedHashMapCache<K, V> extends AbstractEmbeddedCache<K, V> {
 
     @Override
     protected InnerMap createAreaCache() {
-        return new LRUMap(config.getLimit(), this);
+        return new LRUMap(config.getLimit());
     }
 
     @Override
@@ -46,12 +47,12 @@ public class LinkedHashMapCache<K, V> extends AbstractEmbeddedCache<K, V> {
     final class LRUMap extends LinkedHashMap implements InnerMap {
 
         private final int max;
-        private Object lock;
+        private final ReentrantLock lock = new ReentrantLock();
 
-        public LRUMap(int max, Object lock) {
+        public LRUMap(int max) {
             super((int) (max * 1.4f), 0.75f, true);
             this.max = max;
-            this.lock = lock;
+//            this.lockObj = lockObj;
         }
 
         @Override
@@ -60,85 +61,112 @@ public class LinkedHashMapCache<K, V> extends AbstractEmbeddedCache<K, V> {
         }
 
         void cleanExpiredEntry() {
-            synchronized (lock) {
-                for (Iterator it = entrySet().iterator(); it.hasNext();) {
+            lock.lock();
+            long t = System.currentTimeMillis();
+            try {
+                for (Iterator it = entrySet().iterator(); it.hasNext(); ) {
                     Map.Entry en = (Map.Entry) it.next();
                     Object value = en.getValue();
-                    if (value != null && value instanceof CacheValueHolder) {
-                        CacheValueHolder h = (CacheValueHolder) value;
-                        if (System.currentTimeMillis() >= h.getExpireTime()) {
+                    if (value != null) {
+                        CacheValueHolder h;
+                        try {
+                            h = (CacheValueHolder) value;
+                        } catch (ClassCastException e) {
+                            // assert false
+                            logger.error("value of key " + en.getKey() + " is not a CacheValueHolder. type=" + value.getClass());
+                            it.remove();
+                            continue;
+                        }
+                        if (t >= h.getExpireTime()) {
                             it.remove();
                         }
                     } else {
                         // assert false
-                        if (value == null) {
-                            logger.error("key " + en.getKey() + " is null");
-                        } else {
-                            logger.error("value of key " + en.getKey() + " is not a CacheValueHolder. type=" + value.getClass());
-                        }
+                        logger.error("key " + en.getKey() + " is null");
                     }
                 }
+            } finally {
+                lock.unlock();
             }
         }
 
         @Override
         public Object getValue(Object key) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 return get(key);
+            }finally {
+                lock.unlock();
             }
         }
 
         @Override
         public Map getAllValues(Collection keys) {
+            lock.lock();
             Map values = new HashMap();
-            synchronized (lock) {
+            try{
                 for (Object key : keys) {
                     Object v = get(key);
                     if (v != null) {
                         values.put(key, v);
                     }
                 }
+            }finally {
+                lock.unlock();
             }
             return values;
         }
 
         @Override
         public void putValue(Object key, Object value) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 put(key, value);
+            }finally {
+                lock.unlock();
             }
         }
 
         @Override
         public void putAllValues(Map map) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 Set<Map.Entry> set = map.entrySet();
                 for (Map.Entry en : set) {
                     put(en.getKey(), en.getValue());
                 }
+            }finally {
+                lock.unlock();
             }
         }
 
         @Override
         public boolean removeValue(Object key) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 return remove(key) != null;
+            }finally {
+                lock.unlock();
             }
         }
 
         @Override
         public void removeAllValues(Collection keys) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 for (Object k : keys) {
                     remove(k);
                 }
+            }finally {
+                lock.unlock();
             }
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public boolean putIfAbsentValue(Object key, Object value) {
-            synchronized (lock) {
+            lock.lock();
+            try{
                 CacheValueHolder h = (CacheValueHolder) get(key);
                 if (h == null || parseHolderResult(h).getResultCode() == CacheResultCode.EXPIRED) {
                     put(key, value);
@@ -146,6 +174,8 @@ public class LinkedHashMapCache<K, V> extends AbstractEmbeddedCache<K, V> {
                 } else {
                     return false;
                 }
+            }finally {
+                lock.unlock();
             }
         }
     }

@@ -2,12 +2,13 @@ package com.alicp.jetcache.support;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 
 /**
  * Created on 2016/10/4.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class JavaValueDecoder extends AbstractValueDecoder {
 
@@ -26,10 +27,24 @@ public class JavaValueDecoder extends AbstractValueDecoder {
             in = new ByteArrayInputStream(buffer);
         }
         ObjectInputStream ois = buildObjectInputStream(in);
+        setFilter(ois);
         return ois.readObject();
     }
 
     protected ObjectInputStream buildObjectInputStream(ByteArrayInputStream in) throws IOException {
         return new ObjectInputStream(in);
+    }
+
+    private void setFilter(ObjectInputStream ois) {
+        if (!DecodeFilter.getDefault().isEnabled()) {
+            return;
+        }
+        ObjectInputFilter filter = DecodeFilter::javaFilter;
+        ObjectInputFilter existing = ois.getObjectInputFilter();
+        if (existing != null) {
+            ois.setObjectInputFilter(ObjectInputFilter.merge(existing, filter));
+        } else {
+            ois.setObjectInputFilter(filter);
+        }
     }
 }

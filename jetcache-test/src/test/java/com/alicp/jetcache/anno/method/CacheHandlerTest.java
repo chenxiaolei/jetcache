@@ -4,12 +4,19 @@
 package com.alicp.jetcache.anno.method;
 
 import com.alicp.jetcache.Cache;
+import com.alicp.jetcache.CacheManager;
 import com.alicp.jetcache.anno.CacheConsts;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.KeyConvertor;
-import com.alicp.jetcache.anno.support.*;
+import com.alicp.jetcache.anno.support.CacheContext;
+import com.alicp.jetcache.anno.support.CachedAnnoConfig;
+import com.alicp.jetcache.anno.support.ConfigMap;
+import com.alicp.jetcache.anno.support.ConfigProvider;
+import com.alicp.jetcache.anno.support.GlobalCacheConfig;
+import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
 import com.alicp.jetcache.embedded.LinkedHashMapCacheBuilder;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
+import com.alicp.jetcache.test.anno.TestUtil;
 import com.alicp.jetcache.test.support.DynamicQuery;
 import com.alicp.jetcache.testsupport.CountClass;
 import org.junit.jupiter.api.AfterEach;
@@ -19,14 +26,20 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class CacheHandlerTest {
 
     private ConfigProvider configProvider;
+    private CacheManager cacheManager;
     private CachedAnnoConfig cachedAnnoConfig;
     private CacheInvokeConfig cacheInvokeConfig;
     private CountClass count;
@@ -35,12 +48,13 @@ public class CacheHandlerTest {
 
     @BeforeEach
     public void setup() {
-        GlobalCacheConfig globalCacheConfig = new GlobalCacheConfig();
+        GlobalCacheConfig globalCacheConfig = TestUtil.createGloableConfig();
         configProvider = new ConfigProvider();
         configProvider.setGlobalCacheConfig(globalCacheConfig);
         configProvider.init();
+        cacheManager = new JetCacheBaseBeans().cacheManager(configProvider);
         cache = LinkedHashMapCacheBuilder.createLinkedHashMapCacheBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .buildCache();
 
         cachedAnnoConfig = new CachedAnnoConfig();
@@ -74,7 +88,7 @@ public class CacheHandlerTest {
 
 
     private CacheInvokeContext createCachedInvokeContext(Invoker invoker, Method method, Object[] args) {
-        CacheInvokeContext c = configProvider.getCacheContext().createCacheInvokeContext(configMap);
+        CacheInvokeContext c = configProvider.newContext(cacheManager).createCacheInvokeContext(configMap);
         c.setCacheInvokeConfig(cacheInvokeConfig);
         cacheInvokeConfig.setCachedAnnoConfig(cachedAnnoConfig);
         c.setInvoker(invoker);
@@ -202,7 +216,7 @@ public class CacheHandlerTest {
         Method method = CountClass.class.getMethod("count", int.class);
         cachedAnnoConfig.setDefineMethod(method);
         int x1, x2;
-        cachedAnnoConfig.setCondition("mvel{args[0]>10}");
+        cachedAnnoConfig.setCondition("args[0]>10");
         x1 = invokeQuery(method, new Object[]{10});
         x2 = invokeQuery(method, new Object[]{10});
         assertNotEquals(x1, x2);
@@ -216,7 +230,7 @@ public class CacheHandlerTest {
         Method method = CountClass.class.getMethod("count");
         cachedAnnoConfig.setDefineMethod(method);
         int x1, x2, x3;
-        cachedAnnoConfig.setPostCondition("mvel{result%2==1}");
+        cachedAnnoConfig.setPostCondition("result%2==1");
         cacheInvokeConfig.getCachedAnnoConfig().setPostConditionEvaluator(null);
         x1 = invokeQuery(method, null);//return 0, postCondition=false, so not cached
         x2 = invokeQuery(method, null);//return 1, postCondition=true, so cached

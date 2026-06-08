@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Created on 2016/10/8.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class KryoEncoderTest extends AbstractEncoderTest {
     @Test
@@ -16,8 +16,8 @@ public class KryoEncoderTest extends AbstractEncoderTest {
         decoder = KryoValueDecoder.INSTANCE;
         baseTest();
 
-        encoder = new KryoValueEncoder(false);
-        decoder = new KryoValueDecoder(false);
+        encoder = new KryoValueEncoder(false, KryoValueEncoder.DEFAULT_POOL);
+        decoder = new KryoValueDecoder(false, KryoValueEncoder.DEFAULT_POOL);
         baseTest();
     }
 
@@ -46,14 +46,14 @@ public class KryoEncoderTest extends AbstractEncoderTest {
         byte[] bytes = encoder.apply("12345");
         bytes[0] = 0;
         assertThrows(CacheEncodeException.class, () -> decoder.apply(bytes));
-        ((AbstractValueEncoder)encoder).writeHeader(bytes, JavaValueEncoder.IDENTITY_NUMBER);
+        writeHeader(bytes, DecoderMap.IDENTITY_NUMBER_JAVA);
         assertThrows(CacheEncodeException.class, () -> decoder.apply(bytes));
 
         encoder = KryoValueEncoder.INSTANCE;
-        decoder = new KryoValueDecoder(false);
+        decoder = new KryoValueDecoder(false, KryoValueEncoder.DEFAULT_POOL);
         assertThrows(CacheEncodeException.class, () -> decoder.apply(bytes));
 
-        encoder = new KryoValueEncoder(false);
+        encoder = new KryoValueEncoder(false, KryoValueEncoder.DEFAULT_POOL);
         decoder = KryoValueDecoder.INSTANCE;
         assertThrows(CacheEncodeException.class, () -> decoder.apply(bytes));
     }
@@ -63,6 +63,27 @@ public class KryoEncoderTest extends AbstractEncoderTest {
         encoder = KryoValueEncoder.INSTANCE;
         decoder = KryoValueDecoder.INSTANCE;
         super.gcTest();
+    }
+
+
+    @Test
+    public void testVirtualThreadPool() throws InterruptedException {
+        testByThreadPool(true,-1,100,this::test);
+    }
+
+    @Test
+    public void testVirtualThreadGC() throws InterruptedException {
+        testByThreadPool(true,-1,100,this::gcTest);
+    }
+
+    @Test
+    public void testFixThreadPool() throws InterruptedException {
+        testByThreadPool(false,3,100,this::test);
+    }
+
+    @Test
+    public void testFixThreadGC() throws InterruptedException {
+        testByThreadPool(false,3,100,this::gcTest);
     }
 
 }

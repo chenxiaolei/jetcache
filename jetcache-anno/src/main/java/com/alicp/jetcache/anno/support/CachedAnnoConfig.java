@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class CachedAnnoConfig extends CacheAnnoConfig {
 
@@ -19,6 +19,7 @@ public class CachedAnnoConfig extends CacheAnnoConfig {
     private long expire;
     private long localExpire;
     private CacheType cacheType;
+    private boolean syncLocal;
     private int localLimit;
     private boolean cacheNullValue;
     private String serialPolicy;
@@ -132,5 +133,13 @@ public class CachedAnnoConfig extends CacheAnnoConfig {
 
     public void setLocalExpire(long localExpire) {
         this.localExpire = localExpire;
+    }
+
+    public boolean isSyncLocal() {
+        return syncLocal;
+    }
+
+    public void setSyncLocal(boolean syncLocal) {
+        this.syncLocal = syncLocal;
     }
 }

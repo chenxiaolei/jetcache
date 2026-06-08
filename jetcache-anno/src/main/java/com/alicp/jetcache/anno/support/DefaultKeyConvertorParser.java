@@ -5,12 +5,14 @@ package com.alicp.jetcache.anno.support;
 
 import com.alicp.jetcache.CacheConfigException;
 import com.alicp.jetcache.anno.KeyConvertor;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
+import com.alicp.jetcache.support.Jackson3KeyConvertor;
+import com.alicp.jetcache.support.JacksonKeyConvertor;
 
 import java.util.function.Function;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class DefaultKeyConvertorParser implements KeyConvertorParser {
     @Override
@@ -19,9 +21,15 @@ public class DefaultKeyConvertorParser implements KeyConvertorParser {
             return null;
         }
         if (KeyConvertor.FASTJSON.equalsIgnoreCase(convertor)) {
-            return FastjsonKeyConvertor.INSTANCE;
+            return Fastjson2KeyConvertor.INSTANCE;
+        } else if (KeyConvertor.FASTJSON2.equalsIgnoreCase(convertor)) {
+            return Fastjson2KeyConvertor.INSTANCE;
+        } else if (KeyConvertor.JACKSON.equalsIgnoreCase(convertor)) {
+            return JacksonKeyConvertor.INSTANCE;
+        }else if (KeyConvertor.JACKSON3.equalsIgnoreCase(convertor)) {
+            return Jackson3KeyConvertor.INSTANCE;
         } else if (KeyConvertor.NONE.equalsIgnoreCase(convertor)) {
-            return null;
+            return KeyConvertor.NONE_INSTANCE;
         }
         throw new CacheConfigException("not supported:" + convertor);
     }

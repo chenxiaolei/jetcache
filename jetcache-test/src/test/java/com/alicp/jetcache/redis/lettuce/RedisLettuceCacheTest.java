@@ -21,9 +21,8 @@ import io.lettuce.core.cluster.api.reactive.RedisClusterReactiveCommands;
 import io.lettuce.core.cluster.api.sync.RedisClusterCommands;
 import io.lettuce.core.masterslave.MasterSlave;
 import io.lettuce.core.masterslave.StatefulRedisMasterSlaveConnection;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -32,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created on 2017/5/4.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
     public static boolean checkOS() {
@@ -80,7 +79,7 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
                 .buildCache();
         cache.put("K1", "V1");
         Thread.sleep(100);
-        Assert.assertEquals("V1", cache.get("K1"));
+        Assertions.assertEquals("V1", cache.get("K1"));
     }
 
     @Test
@@ -113,7 +112,7 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
                 .buildCache();
         cache.put("K1", "V1");
         Thread.sleep(100);
-        Assert.assertEquals("V1", cache.get("K1"));
+        Assertions.assertEquals("V1", cache.get("K1"));
     }
 
     @Test
@@ -121,12 +120,12 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
         Cache l1Cache = CaffeineCacheBuilder.createCaffeineCacheBuilder()
                 .limit(10)
                 .expireAfterWrite(500, TimeUnit.MILLISECONDS)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .buildCache();
         RedisClient client = RedisClient.create("redis://127.0.0.1");
         Cache l2Cache = RedisLettuceCacheBuilder.createRedisLettuceCacheBuilder()
                 .redisClient(client)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .keyPrefix(new Random().nextInt() + "")
@@ -141,7 +140,7 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
 
         LoadingCacheTest.loadingCacheTest(MultiLevelCacheBuilder.createMultiLevelCacheBuilder()
                 .expireAfterWrite(5000, TimeUnit.MILLISECONDS)
-                .addCache(l1Cache, l2Cache), 50);
+                .addCache(l1Cache, l2Cache), 20);
 
         LettuceConnectionManager.defaultManager().removeAndClose(client);
     }
@@ -150,7 +149,7 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
         cache = RedisLettuceCacheBuilder.createRedisLettuceCacheBuilder()
                 .redisClient(client)
                 .connection(connection)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .keyPrefix(new Random().nextInt() + "")
@@ -163,10 +162,10 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
 
         LoadingCacheTest.loadingCacheTest(RedisLettuceCacheBuilder.createRedisLettuceCacheBuilder()
                 .redisClient(client)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
-                .keyPrefix(new Random().nextInt() + ""), 50);
+                .keyPrefix(new Random().nextInt() + ""), 20);
 
         cache = RedisLettuceCacheBuilder.createRedisLettuceCacheBuilder()
                 .redisClient(client)
@@ -181,7 +180,7 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
         int time = 3000;
         cache = RedisLettuceCacheBuilder.createRedisLettuceCacheBuilder()
                 .redisClient(client)
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(KryoValueEncoder.INSTANCE)
                 .valueDecoder(KryoValueDecoder.INSTANCE)
                 .keyPrefix(new Random().nextInt() + "")
@@ -192,17 +191,17 @@ public class RedisLettuceCacheTest extends AbstractExternalCacheTest {
     }
 
     private void testUnwrap(AbstractRedisClient client) {
-        Assert.assertTrue(cache.unwrap(AbstractRedisClient.class) instanceof AbstractRedisClient);
+        Assertions.assertTrue(cache.unwrap(AbstractRedisClient.class) instanceof AbstractRedisClient);
         if (client instanceof RedisClient) {
-            Assert.assertTrue(cache.unwrap(RedisClient.class) instanceof RedisClient);
-            Assert.assertTrue(cache.unwrap(RedisCommands.class) instanceof RedisCommands);
-            Assert.assertTrue(cache.unwrap(RedisAsyncCommands.class) instanceof RedisAsyncCommands);
-            Assert.assertTrue(cache.unwrap(RedisReactiveCommands.class) instanceof RedisReactiveCommands);
+            Assertions.assertTrue(cache.unwrap(RedisClient.class) instanceof RedisClient);
+            Assertions.assertTrue(cache.unwrap(RedisCommands.class) instanceof RedisCommands);
+            Assertions.assertTrue(cache.unwrap(RedisAsyncCommands.class) instanceof RedisAsyncCommands);
+            Assertions.assertTrue(cache.unwrap(RedisReactiveCommands.class) instanceof RedisReactiveCommands);
         } else {
-            Assert.assertTrue(cache.unwrap(RedisClusterClient.class) instanceof RedisClusterClient);
-            Assert.assertTrue(cache.unwrap(RedisClusterCommands.class) instanceof RedisClusterCommands);
-            Assert.assertTrue(cache.unwrap(RedisClusterAsyncCommands.class) instanceof RedisClusterAsyncCommands);
-            Assert.assertTrue(cache.unwrap(RedisClusterReactiveCommands.class) instanceof RedisClusterReactiveCommands);
+            Assertions.assertTrue(cache.unwrap(RedisClusterClient.class) instanceof RedisClusterClient);
+            Assertions.assertTrue(cache.unwrap(RedisClusterCommands.class) instanceof RedisClusterCommands);
+            Assertions.assertTrue(cache.unwrap(RedisClusterAsyncCommands.class) instanceof RedisClusterAsyncCommands);
+            Assertions.assertTrue(cache.unwrap(RedisClusterReactiveCommands.class) instanceof RedisClusterReactiveCommands);
         }
     }
 }

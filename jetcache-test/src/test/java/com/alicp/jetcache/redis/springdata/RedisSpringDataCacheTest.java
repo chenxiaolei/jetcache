@@ -2,9 +2,14 @@ package com.alicp.jetcache.redis.springdata;
 
 import com.alicp.jetcache.LoadingCacheTest;
 import com.alicp.jetcache.RefreshCacheTest;
-import com.alicp.jetcache.support.*;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
+import com.alicp.jetcache.support.JavaValueDecoder;
+import com.alicp.jetcache.support.JavaValueEncoder;
+import com.alicp.jetcache.support.KryoValueDecoder;
+import com.alicp.jetcache.support.KryoValueEncoder;
 import com.alicp.jetcache.test.external.AbstractExternalCacheTest;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -16,13 +21,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created on 2016/10/8.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class RedisSpringDataCacheTest extends AbstractExternalCacheTest {
 
     @Test
     public void jedisTest() throws Exception {
-        RedisConnectionFactory connectionFactory = new JedisConnectionFactory();
+        JedisConnectionFactory connectionFactory = new JedisConnectionFactory();
+        connectionFactory.afterPropertiesSet();
         doTest(connectionFactory);
     }
 
@@ -39,7 +45,7 @@ public class RedisSpringDataCacheTest extends AbstractExternalCacheTest {
 
 
         cache = RedisSpringDataCacheBuilder.createBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .connectionFactory(connectionFactory)
@@ -52,13 +58,13 @@ public class RedisSpringDataCacheTest extends AbstractExternalCacheTest {
         expireAfterWriteTest(cache.config().getExpireAfterWriteInMillis());
 
         LoadingCacheTest.loadingCacheTest(RedisSpringDataCacheBuilder.createBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .connectionFactory(connectionFactory)
                 .keyPrefix(new Random().nextInt() + ""), 0);
         RefreshCacheTest.refreshCacheTest(RedisSpringDataCacheBuilder.createBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .connectionFactory(connectionFactory)
@@ -77,7 +83,7 @@ public class RedisSpringDataCacheTest extends AbstractExternalCacheTest {
         int thread = 10;
         int time = 3000;
         cache = RedisSpringDataCacheBuilder.createBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(KryoValueEncoder.INSTANCE)
                 .valueDecoder(KryoValueDecoder.INSTANCE)
                 .connectionFactory(connectionFactory)

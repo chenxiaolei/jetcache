@@ -1,17 +1,29 @@
 package com.alicp.jetcache.anno.filed;
 
-import com.alicp.jetcache.*;
-import com.alicp.jetcache.anno.*;
+import com.alicp.jetcache.Cache;
+import com.alicp.jetcache.CacheManager;
+import com.alicp.jetcache.CacheResultCode;
+import com.alicp.jetcache.LoadingCacheTest;
+import com.alicp.jetcache.MultiLevelCache;
+import com.alicp.jetcache.MultiLevelCacheConfig;
+import com.alicp.jetcache.ProxyCache;
+import com.alicp.jetcache.RefreshCacheTest;
+import com.alicp.jetcache.anno.CachePenetrationProtect;
+import com.alicp.jetcache.anno.CacheRefresh;
+import com.alicp.jetcache.anno.CacheType;
+import com.alicp.jetcache.anno.CreateCache;
+import com.alicp.jetcache.anno.KeyConvertor;
+import com.alicp.jetcache.anno.SerialPolicy;
 import com.alicp.jetcache.anno.config.EnableCreateCacheAnnotation;
 import com.alicp.jetcache.anno.config.EnableMethodCache;
 import com.alicp.jetcache.anno.support.ConfigProvider;
 import com.alicp.jetcache.anno.support.GlobalCacheConfig;
-import com.alicp.jetcache.anno.support.SpringConfigProvider;
+import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
 import com.alicp.jetcache.embedded.EmbeddedCacheConfig;
 import com.alicp.jetcache.embedded.LinkedHashMapCache;
 import com.alicp.jetcache.external.ExternalCacheConfig;
 import com.alicp.jetcache.external.MockRemoteCache;
-import com.alicp.jetcache.support.FastjsonKeyConvertor;
+import com.alicp.jetcache.support.Fastjson2KeyConvertor;
 import com.alicp.jetcache.support.JavaValueDecoder;
 import com.alicp.jetcache.support.JavaValueEncoder;
 import com.alicp.jetcache.test.AbstractCacheTest;
@@ -20,26 +32,24 @@ import com.alicp.jetcache.test.beans.MyFactoryBean;
 import com.alicp.jetcache.test.spring.SpringTest;
 import com.alicp.jetcache.test.support.DynamicQuery;
 import com.alicp.jetcache.test.support.DynamicQueryWithEquals;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created on 2016/12/9.
  *
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = CreateCacheTest.A.class)
+@SpringJUnitConfig(CreateCacheTest.A.class)
 public class CreateCacheTest extends SpringTest {
 
     @Test
@@ -51,12 +61,8 @@ public class CreateCacheTest extends SpringTest {
     @ComponentScan(basePackages = "com.alicp.jetcache.test.beans")
     @EnableMethodCache(basePackages = "com.alicp.jetcache.test.beans")
     @EnableCreateCacheAnnotation
+    @Import(JetCacheBaseBeans.class)
     public static class A {
-
-        @Bean
-        public SpringConfigProvider springConfigProvider() {
-            return new SpringConfigProvider();
-        }
 
         @Bean
         public GlobalCacheConfig config() {
@@ -78,6 +84,9 @@ public class CreateCacheTest extends SpringTest {
 
             @Autowired
             private ConfigProvider configProvider;
+
+            @Autowired
+            private CacheManager cacheManager;
 
             @CreateCache
             private Cache cache1;
@@ -102,7 +111,15 @@ public class CreateCacheTest extends SpringTest {
 
             @CreateCache
             @CacheRefresh(timeUnit = TimeUnit.MILLISECONDS, refresh = 100)
-            private Cache cacheWithRefresh;
+            private Cache cacheWithRefresh1;
+
+            @CreateCache
+            @CacheRefresh(timeUnit = TimeUnit.MILLISECONDS, refresh = 100)
+            private Cache cacheWithRefresh2;
+
+            @CreateCache
+            @CacheRefresh(timeUnit = TimeUnit.MILLISECONDS, refresh = 100)
+            private Cache cacheWithRefresh3;
 
             @CreateCache
             @CachePenetrationProtect(timeout = 1)
@@ -132,63 +149,60 @@ public class CreateCacheTest extends SpringTest {
                 testCacheWithLocalExpire();
 
                 cache1.put("KK1", "V1");
-                Assert.assertNull(cache_A1.get("KK1"));
-                Assert.assertNull(cache2.get("KK1"));
+                Assertions.assertNull(cache_A1.get("KK1"));
+                Assertions.assertNull(cache2.get("KK1"));
 
-                Assert.assertSame(getTarget(cacheSameName1), getTarget(cacheSameName2));
-                Assert.assertSame(getTarget(cacheSameName1),
-                        getTarget(configProvider.getCacheContext().getCache("sameCacheName")));
-                Assert.assertNotSame(getTarget(cacheSameName1), getTarget(cache1));
+                Assertions.assertSame(getTarget(cacheSameName1), getTarget(cacheSameName2));
+                Assertions.assertSame(getTarget(cacheSameName1),
+                        getTarget(cacheManager.getCache("sameCacheName")));
+                Assertions.assertNotSame(getTarget(cacheSameName1), getTarget(cache1));
 
                 cacheSameName1.put("SameKey", "SameValue");
-                Assert.assertEquals(cacheSameName1.get("SameKey"),cacheSameName2.get("SameKey"));
-                Assert.assertNull(cache1.get("SameKey"));
+                Assertions.assertEquals(cacheSameName1.get("SameKey"),cacheSameName2.get("SameKey"));
+                Assertions.assertNull(cache1.get("SameKey"));
 
-                Assert.assertTrue(getTarget(cache1) instanceof MockRemoteCache);
-                Assert.assertSame(FastjsonKeyConvertor.INSTANCE, cache1.config().getKeyConvertor());
+                Assertions.assertTrue(getTarget(cache1) instanceof MockRemoteCache);
+                Assertions.assertSame(Fastjson2KeyConvertor.INSTANCE, cache1.config().getKeyConvertor());
 
-                Assert.assertTrue(getTarget(cacheWithConfig) instanceof MultiLevelCache);
-                Assert.assertEquals(50, cacheWithConfig.config().getExpireAfterWriteInMillis());
+                Assertions.assertTrue(getTarget(cacheWithConfig) instanceof MultiLevelCache);
+                Assertions.assertEquals(50, cacheWithConfig.config().getExpireAfterWriteInMillis());
 
                 MultiLevelCache mc = (MultiLevelCache) getTarget(cacheWithConfig);
                 Cache localCache = getTarget(mc.caches()[0]);
                 Cache remoteCache = getTarget(mc.caches()[1]);
-                Assert.assertTrue(localCache instanceof LinkedHashMapCache);
-                Assert.assertTrue(remoteCache instanceof MockRemoteCache);
+                Assertions.assertTrue(localCache instanceof LinkedHashMapCache);
+                Assertions.assertTrue(remoteCache instanceof MockRemoteCache);
                 EmbeddedCacheConfig localConfig = (EmbeddedCacheConfig) localCache.config();
                 ExternalCacheConfig remoteConfig = (ExternalCacheConfig) remoteCache.config();
-                Assert.assertEquals(50, localConfig.getExpireAfterWriteInMillis());
-                Assert.assertEquals(50, remoteConfig.getExpireAfterWriteInMillis());
-                Assert.assertEquals(10, localConfig.getLimit());
-                Assert.assertEquals(JavaValueEncoder.class, remoteConfig.getValueEncoder().getClass());
-                Assert.assertTrue(remoteConfig.getValueDecoder() instanceof JavaValueDecoder);
-                Assert.assertNull(localConfig.getKeyConvertor());
-                Assert.assertNull(remoteConfig.getKeyConvertor());
+                Assertions.assertEquals(50, localConfig.getExpireAfterWriteInMillis());
+                Assertions.assertEquals(50, remoteConfig.getExpireAfterWriteInMillis());
+                Assertions.assertEquals(10, localConfig.getLimit());
+                Assertions.assertEquals(JavaValueEncoder.class, remoteConfig.getValueEncoder().getClass());
+                Assertions.assertTrue(remoteConfig.getValueDecoder() instanceof JavaValueDecoder);
+                Assertions.assertSame(KeyConvertor.NONE_INSTANCE, localConfig.getKeyConvertor());
+                Assertions.assertSame(KeyConvertor.NONE_INSTANCE, remoteConfig.getKeyConvertor());
 
             }
 
             private void testCacheWithLocalExpire() {
                 MultiLevelCacheConfig<?,?> config = (MultiLevelCacheConfig) cacheWithLocalExpire_1.config();
-                Assert.assertTrue(config.isUseExpireOfSubCache());
-                Assert.assertEquals(2000, config.getExpireAfterWriteInMillis());
-                Assert.assertEquals(1000, config.getCaches().get(0).config().getExpireAfterWriteInMillis());
-                Assert.assertEquals(2000, config.getCaches().get(1).config().getExpireAfterWriteInMillis());
+                Assertions.assertTrue(config.isUseExpireOfSubCache());
+                Assertions.assertEquals(2000, config.getExpireAfterWriteInMillis());
+                Assertions.assertEquals(1000, config.getCaches().get(0).config().getExpireAfterWriteInMillis());
+                Assertions.assertEquals(2000, config.getCaches().get(1).config().getExpireAfterWriteInMillis());
 
                 config = (MultiLevelCacheConfig) cacheWithLocalExpire_2.config();
-                Assert.assertFalse(config.isUseExpireOfSubCache());
-                Assert.assertEquals(2000, config.getExpireAfterWriteInMillis());
-                Assert.assertEquals(2000, config.getCaches().get(0).config().getExpireAfterWriteInMillis());
-                Assert.assertEquals(2000, config.getCaches().get(1).config().getExpireAfterWriteInMillis());
+                Assertions.assertFalse(config.isUseExpireOfSubCache());
+                Assertions.assertEquals(2000, config.getExpireAfterWriteInMillis());
+                Assertions.assertEquals(2000, config.getCaches().get(0).config().getExpireAfterWriteInMillis());
+                Assertions.assertEquals(2000, config.getCaches().get(1).config().getExpireAfterWriteInMillis());
 
-                Assert.assertEquals(2000, cacheWithLocalExpire_3.config().getExpireAfterWriteInMillis());
+                Assertions.assertEquals(2000, cacheWithLocalExpire_3.config().getExpireAfterWriteInMillis());
             }
 
             private void runGeneralTest() throws Exception {
                 super.cache = this.cache1;
                 super.baseTest();
-                LoadingCacheTest.loadingCacheTest(cache1, 0);
-                RefreshCacheTest.refreshCacheTest(cache1, 200, 100);
-                RefreshCacheTest.computeIfAbsentTest(cache1);
             }
 
             private void cacheWithoutConvertorTest() {
@@ -202,8 +216,8 @@ public class CreateCacheTest extends SpringTest {
                 q3.setId(1000);
                 q3.setName("N1");
                 cacheWithoutConvertor.put(q1, "V");
-                Assert.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(q2).getResultCode());
-                Assert.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(q3).getResultCode());
+                Assertions.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(q2).getResultCode());
+                Assertions.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(q3).getResultCode());
 
                 DynamicQueryWithEquals dqwe1 = new DynamicQueryWithEquals();
                 dqwe1.setId(1000);
@@ -215,18 +229,25 @@ public class CreateCacheTest extends SpringTest {
                 dqwe3.setId(1000);
                 dqwe3.setName("N1");
                 cacheWithoutConvertor.put(dqwe1, "V");
-                Assert.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(dqwe2).getResultCode());
-                Assert.assertEquals(CacheResultCode.SUCCESS, cacheWithoutConvertor.GET(dqwe3).getResultCode());
+                Assertions.assertEquals(CacheResultCode.NOT_EXISTS, cacheWithoutConvertor.GET(dqwe2).getResultCode());
+                Assertions.assertEquals(CacheResultCode.SUCCESS, cacheWithoutConvertor.GET(dqwe3).getResultCode());
             }
 
             private int refreshCount;
             private void refreshTest() throws Exception {
-                cacheWithRefresh.config().setLoader((k) -> refreshCount++);
-                cacheWithRefresh.put("K1", "V1");
-                Assert.assertEquals("V1", cacheWithRefresh.get("K1"));
-                Thread.sleep((long) (cacheWithRefresh.config().getRefreshPolicy().getRefreshMillis() * 1.5));
-                Assert.assertEquals(0, cacheWithRefresh.get("K1"));
-                cacheWithRefresh.close();
+                LoadingCacheTest.loadingCacheTest(cacheWithRefresh1, 0);
+                RefreshCacheTest.refreshCacheTest(cacheWithRefresh2, 200, 100);
+                RefreshCacheTest.computeIfAbsentTest(cacheWithRefresh2);
+
+                cacheWithRefresh3.config().setLoader((k) -> refreshCount++);
+                cacheWithRefresh3.put("K1", "V1");
+                Assertions.assertEquals("V1", cacheWithRefresh3.get("K1"));
+                Thread.sleep((long) (cacheWithRefresh3.config().getRefreshPolicy().getRefreshMillis() * 1.5));
+                Assertions.assertEquals(0, cacheWithRefresh3.get("K1"));
+
+                cacheWithRefresh1.close();
+                cacheWithRefresh2.close();
+                cacheWithRefresh3.close();
             }
         }
     }

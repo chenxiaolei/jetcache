@@ -3,8 +3,16 @@
  */
 package com.alicp.jetcache.anno.method;
 
-import com.alicp.jetcache.*;
-import com.alicp.jetcache.anno.support.*;
+import com.alicp.jetcache.AbstractCache;
+import com.alicp.jetcache.Cache;
+import com.alicp.jetcache.CacheInvokeException;
+import com.alicp.jetcache.CacheLoader;
+import com.alicp.jetcache.ProxyCache;
+import com.alicp.jetcache.anno.support.CacheContext;
+import com.alicp.jetcache.anno.support.CacheInvalidateAnnoConfig;
+import com.alicp.jetcache.anno.support.CacheUpdateAnnoConfig;
+import com.alicp.jetcache.anno.support.CachedAnnoConfig;
+import com.alicp.jetcache.anno.support.ConfigMap;
 import com.alicp.jetcache.event.CacheLoadEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +20,17 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 public class CacheHandler implements InvocationHandler {
     private static Logger logger = LoggerFactory.getLogger(CacheHandler.class);
@@ -29,7 +43,7 @@ public class CacheHandler implements InvocationHandler {
     private static class CacheContextSupport extends CacheContext {
 
         public CacheContextSupport() {
-            super(null, null);
+            super(null, null, null);
         }
 
         static void _enable() {
@@ -277,18 +291,5 @@ public class CacheHandler implements InvocationHandler {
     private static Object invokeOrigin(CacheInvokeContext context) throws Throwable {
         return context.getInvoker().invoke();
     }
-
-    public static class CacheHandlerRefreshCache<K, V> extends RefreshCache<K, V> {
-
-        public CacheHandlerRefreshCache(Cache cache) {
-            super(cache);
-        }
-
-        @Override
-        public void addOrUpdateRefreshTask(K key, CacheLoader<K, V> loader) {
-            super.addOrUpdateRefreshTask(key, loader);
-        }
-    }
-
 
 }

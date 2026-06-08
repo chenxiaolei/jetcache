@@ -6,6 +6,7 @@ JetCache提供的核心能力包括：
 * 提供统一的，类似jsr-107风格的API访问Cache，并可通过注解创建并配置Cache实例
 * 通过注解实现声明式的方法缓存，支持TTL和两级缓存
 * 分布式缓存自动刷新，分布式锁 (2.2+)
+* 分布式多级缓存场景，缓存更新后，自动让所有的local cache失效（2.7+）
 * 支持异步Cache API
 * Spring Boot支持
 * Key的生成策略和Value的序列化策略是可以定制的
@@ -57,23 +58,33 @@ userCache.remove(12345L);
 
 userCache.computeIfAbsent(1234567L, (key) -> loadUserFromDataBase(1234567L));
 ```
-实际上Cache API实现了jsr107规范Cache接口的部分方法，以后的大版本可能会完整实现。
 
-Cache实例可以通过注解创建：
+Cache实例可以通过CacheManager创建（在2.7版本中CreateCache注解已经废弃），相同area和name的情况下，和@Cached注解共用同一个Cache实例：
 ```java
-@CreateCache(expire = 100, cacheType = CacheType.BOTH, localLimit = 50)
-private Cache<Long, UserDO> userCache;
+@Autowired
+private CacheManager cacheManager;
+private Cache<String, UserDO> userCache;
+
+@PostConstruct
+public void init() {
+    QuickConfig qc = QuickConfig.newBuilder("userCache")
+        .expire(Duration.ofSeconds(100))
+        .cacheType(CacheType.BOTH) // two level cache
+        .syncLocal(true) // invalidate local cache in all jvm process after update
+        .build();
+    userCache = cacheManager.getOrCreateCache(qc);
+}
 ```
 
-也可以通过和guava cache/caffeine类似的builder来创建：
+也可以通过和guava cache/caffeine类似的builder来创建（这是low level api）：
 ```java
 GenericObjectPoolConfig pc = new GenericObjectPoolConfig();
 pc.setMinIdle(2);
 pc.setMaxIdle(10);
 pc.setMaxTotal(10);
-JedisPool pool = new JedisPool(pc, "localhost", 6379);
+JedisPool pool = new JedisPool(pc, "127.0.0.1", 6379);
 Cache<Long, UserDO> userCache = RedisCacheBuilder.createRedisCacheBuilder()
-                .keyConvertor(FastjsonKeyConvertor.INSTANCE)
+                .keyConvertor(Fastjson2KeyConvertor.INSTANCE)
                 .valueEncoder(JavaValueEncoder.INSTANCE)
                 .valueDecoder(JavaValueDecoder.INSTANCE)
                 .jedisPool(pool)
@@ -81,6 +92,8 @@ Cache<Long, UserDO> userCache = RedisCacheBuilder.createRedisCacheBuilder()
                 .expireAfterWrite(200, TimeUnit.SECONDS)
                 .buildCache();
 ```
+
+> **安全提示**：JetCache 2.8.x 默认开启了反序列化安全过滤器，只允许常见Java包和JetCache包下的类被反序列化。如果缓存值包含自定义类（如 `UserDO`、`OrderDO`），需要配置允许列表，详见[配置文档](docs/CN/Config.md)中的"反序列化过滤器配置"章节。
 
 Cache接口支持异步：
 ```java
@@ -98,20 +111,19 @@ future.thenRun(() -> {
 cache.tryLockAndRun("key", 60, TimeUnit.SECONDS, () -> heavyDatabaseOperation());
 ```
 
-使用Cache API也可以做自动刷新哦：
-```java
-@CreateCache
-@CacheRefresh(timeUnit = TimeUnit.MINUTES, refresh = 60)
-@CachePenetrationProtect
-private Cache<String, Long> orderSumCache;
+使用Cache实例也可以配置自动刷新：
 
+```java
 @PostConstruct
-public void init(){
-    orderSumCache.config().setLoader(this::loadOrderSumFromDatabase);
+public void init() {
+    QuickConfig qc = QuickConfig.newBuilder("userCache")
+        .refreshPolicy(RefreshPolicy.newPolicy(60, TimeUnit.SECONDS))
+        .build();
+    userCache = cacheManager.getOrCreateCache(qc);
 }
 ```
 
-如果没有使用注解，用builder一样也可以做出自动刷新：
+low level api的builder一样也可以做出自动刷新：
 ```java
 Cache<String, Long> orderSumCache = RedisCacheBuilder.createRedisCacheBuilder()
     ......省略
@@ -124,15 +136,15 @@ Cache<String, Long> orderSumCache = RedisCacheBuilder.createRedisCacheBuilder()
 * [Caffeine](https://github.com/ben-manes/caffeine)（基于本地内存）
 * LinkedHashMap（基于本地内存，JetCache自己实现的简易LRU缓存）
 * Alibaba Tair（相关实现未在Github开源，在阿里内部Gitlab上可以找到）
-* Redis
+* Redis（含jedis、lettuce、spring-data、redisson几种访问方式）
 
 
 使用JetCache的系统需求：
-* JDK：必须Java 8
-* Spring Framework：4.0.8以上，如果不使用注解就不需要
-* Spring Boot：1.1.9以上（可选）
+* JDK：jetcache 2.8+需要Java 17以上版本，jetcache 2.7及以下版本支持Java 8+
+* Spring Framework（可选，如果用low level api就不需要）：jetcache 2.8需要6.x以上，jetcache 2.7需要5.2.4以上
+* Spring Boot（可选）：jetcache 2.8需要3.x以上，jetcache 2.7需要2.2.5以上
 
-更多文档可以在github的wiki上找到。
+更多文档可以在github仓库的docs中找到。
 
 有了JetCache，我们就可以更方便的基于统一的接口访问缓存。
 

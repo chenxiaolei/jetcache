@@ -3,11 +3,15 @@
  */
 package com.alicp.jetcache.anno;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:areyouok@gmail.com">huangli</a>
+ * @author huangli
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -52,7 +56,10 @@ public @interface Cached {
     int expire() default CacheConsts.UNDEFINED_INT;
 
     /**
-     * Use to specify the local cache expire time when cacheType=CacheType.BOTH, use "expire" if absent.
+     * Use to specify the local cache expire time when cacheType=CacheType.BOTH.
+     * If not set, use "expire" as local expire time. If the global config
+     * "useDefaultLocalExpireInMultiLevelCache" is set to true, use the local cache
+     * builder's expireAfterWriteInMillis instead (but not greater than "expire").
      * @return the local cache expire time
      */
     int localExpire() default CacheConsts.UNDEFINED_INT;
@@ -63,6 +70,13 @@ public @interface Cached {
      * @return cache type of the method cache
      */
     CacheType cacheType() default CacheType.REMOTE;
+
+    /**
+     * if cacheType is CacheType.BOTH and the remote cache supports broadcast (or BroadcastManager bean exists),
+     * invalidate local cache of all process after put/remove operation.
+     * @return should sync local cache
+     */
+    boolean syncLocal() default false;
 
     /**
      * Specify max elements in local memory when cacheType is CacheType.LOCAL or CacheType.BOTH.
