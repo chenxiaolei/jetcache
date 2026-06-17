@@ -6,6 +6,7 @@ package com.alicp.jetcache.anno.aop;
 import com.alicp.jetcache.anno.method.CacheConfigUtil;
 import com.alicp.jetcache.anno.method.CacheInvokeConfig;
 import com.alicp.jetcache.anno.method.ClassUtil;
+import com.alicp.jetcache.anno.support.CacheNameGenerator;
 import com.alicp.jetcache.anno.support.ConfigMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import org.springframework.asm.Type;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Supplier;
 
 /**
  * @author huangli
@@ -25,6 +27,9 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
 
     private ConfigMap cacheConfigMap;
     private String[] basePackages;
+
+    // todo: add features
+    private CacheNameGenerator cacheNameGenerator;
 
     public CachePointcut(String[] basePackages) {
         setClassFilter(this);
@@ -136,12 +141,14 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
             Class<?>[] paramTypes = method.getParameterTypes();
             parseByTargetClass(cac, targetClass, name, paramTypes);
 
+            // todo: add features
             if (!cac.isEnableCacheContext() && cac.getCachedAnnoConfig() == null &&
                     cac.getInvalidateAnnoConfigs() == null && cac.getUpdateAnnoConfig() == null) {
                 cacheConfigMap.putByMethodInfo(key, CacheInvokeConfig.getNoCacheInvokeConfigInstance());
                 return false;
             } else {
-                cacheConfigMap.putByMethodInfo(key, cac);
+                Supplier<String> autogenerateNameFunc = () -> cacheNameGenerator.generateCacheName(method, null, targetClass);
+                cacheConfigMap.putByMethodInfo(key, cac, autogenerateNameFunc);
                 return true;
             }
         }
@@ -204,4 +211,10 @@ public class CachePointcut extends StaticMethodMatcherPointcut implements ClassF
     public void setCacheConfigMap(ConfigMap cacheConfigMap) {
         this.cacheConfigMap = cacheConfigMap;
     }
+
+    // todo: add features
+    public void setCacheNameGenerator(CacheNameGenerator cacheNameGenerator) {
+        this.cacheNameGenerator = cacheNameGenerator;
+    }
+
 }

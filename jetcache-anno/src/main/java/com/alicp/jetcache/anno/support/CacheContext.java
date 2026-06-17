@@ -57,7 +57,9 @@ public class CacheContext {
         } else if ((cacheAnnoConfig instanceof CacheInvalidateAnnoConfig) || (cacheAnnoConfig instanceof CacheUpdateAnnoConfig)) {
             cache = cacheManager.getCache(cacheAnnoConfig.getArea(), cacheAnnoConfig.getName());
             if (cache == null) {
-                CachedAnnoConfig cac = configMap.getByCacheName(cacheAnnoConfig.getArea(), cacheAnnoConfig.getName());
+                // todo: add features
+                String cacheName = getOrGenerateCacheName(cacheAnnoConfig.getName(), invokeContext);
+                CachedAnnoConfig cac = configMap.getByCacheName(cacheAnnoConfig.getArea(), cacheName);
                 if (cac == null) {
                     String message = "can't find cache definition with area=" + cacheAnnoConfig.getArea()
                             + " name=" + cacheAnnoConfig.getName() +
@@ -73,14 +75,18 @@ public class CacheContext {
         return cache;
     }
 
+    // todo: add features
+    private String getOrGenerateCacheName(String cacheName, CacheInvokeContext invokeContext) {
+        if (CacheConsts.isUndefined(cacheName)) {
+            return configProvider.createCacheNameGenerator(invokeContext.getHiddenPackages())
+                    .generateCacheName(invokeContext.getMethod(), invokeContext.getTargetObject(), invokeContext.getTargetObject().getClass());
+        }
+        return cacheName;
+    }
+
     private Cache createCacheByCachedConfig(CachedAnnoConfig ac, CacheInvokeContext invokeContext) {
         String area = ac.getArea();
-        String cacheName = ac.getName();
-        if (CacheConsts.isUndefined(cacheName)) {
-
-            cacheName = configProvider.createCacheNameGenerator(invokeContext.getHiddenPackages())
-                    .generateCacheName(invokeContext.getMethod(), invokeContext.getTargetObject());
-        }
+        String cacheName = getOrGenerateCacheName(ac.getName(), invokeContext);
         Cache cache = __createOrGetCache(ac, area, cacheName);
         return cache;
     }

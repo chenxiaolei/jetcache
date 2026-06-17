@@ -35,7 +35,8 @@ public class ConfigProvider_CustomCacheManager_Test extends SpringTestBase {
     public SpringConfigProvider springConfigProvider(
             @Autowired ApplicationContext context,
             @Autowired GlobalCacheConfig config) {
-        return new JetCacheBaseBeans().springConfigProvider(context, config, null, null, null);
+        // todo: add features
+        return new JetCacheBaseBeans().springConfigProvider(context, config, null, null, null, null);
     }
 
     @Bean

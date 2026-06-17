@@ -56,8 +56,9 @@ public class TestUtil {
 
     public static SpringConfigProvider createConfigProvider() {
         JetCacheBaseBeans baseBeans = new JetCacheBaseBeans();
+        // todo: add features
         SpringConfigProvider configProvider = baseBeans.springConfigProvider(
-                null, createGloableConfig(), null, null, null);
+                null, createGloableConfig(), null, null, null, null);
         baseBeans.cacheManager(configProvider);
         return configProvider;
     }

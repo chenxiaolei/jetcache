@@ -35,6 +35,8 @@ public class ConfigProvider extends AbstractLifecycle {
 
     private CacheBuilderTemplate cacheBuilderTemplate;
 
+    private CacheNameGenerator cacheNameGenerator;  // todo: add features
+
     public ConfigProvider() {
         encoderParser = new DefaultEncoderParser();
         keyConvertorParser = new DefaultKeyConvertorParser();
@@ -137,8 +139,12 @@ public class ConfigProvider extends AbstractLifecycle {
         return keyConvertorParser.parseKeyConvertor(convertor);
     }
 
+    // todo: add features
     public CacheNameGenerator createCacheNameGenerator(String[] hiddenPackages) {
-        return new DefaultCacheNameGenerator(hiddenPackages);
+        if (cacheNameGenerator == null) {
+            cacheNameGenerator = new DefaultCacheNameGenerator(hiddenPackages);
+        }
+        return cacheNameGenerator;
     }
 
     public CacheContext newContext(CacheManager cacheManager) {
@@ -165,4 +171,9 @@ public class ConfigProvider extends AbstractLifecycle {
         this.metricsCallback = metricsCallback;
     }
 
+
+    // todo: add features
+    public void setCacheNameGenerator(CacheNameGenerator cacheNameGenerator) {
+        this.cacheNameGenerator = cacheNameGenerator;
+    }
 }

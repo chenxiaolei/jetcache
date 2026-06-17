@@ -28,10 +28,17 @@ public class JetCacheBaseBeans {
             @Autowired GlobalCacheConfig globalCacheConfig,
             @Autowired(required = false) EncoderParser encoderParser,
             @Autowired(required = false) KeyConvertorParser keyConvertorParser,
-            @Autowired(required = false) Consumer<StatInfo> metricsCallback) {
+            @Autowired(required = false) Consumer<StatInfo> metricsCallback,
+            @Autowired(required = false) CacheNameGenerator cacheNameGenerator  // todo: add features
+    ) {
         SpringConfigProvider cp = createConfigProvider();
         cp.setApplicationContext(applicationContext);
         cp.setGlobalCacheConfig(globalCacheConfig);
+
+        // todo: add features
+        if (cacheNameGenerator != null) {
+            cp.setCacheNameGenerator(cacheNameGenerator);
+        }
 
         if (encoderParser != null) {
             cp.setEncoderParser(encoderParser);

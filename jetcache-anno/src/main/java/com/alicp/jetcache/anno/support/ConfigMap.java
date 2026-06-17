@@ -7,6 +7,7 @@ import com.alicp.jetcache.anno.CacheConsts;
 import com.alicp.jetcache.anno.method.CacheInvokeConfig;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * @author huangli
@@ -15,11 +16,22 @@ public class ConfigMap {
     private ConcurrentHashMap<String, CacheInvokeConfig> methodInfoMap = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, CachedAnnoConfig> cacheNameMap = new ConcurrentHashMap<>();
 
+    // todo: add features
     public void putByMethodInfo(String key, CacheInvokeConfig config) {
+        putByMethodInfo(key, config, null);
+    }
+
+    // todo: add features
+    public void putByMethodInfo(String key, CacheInvokeConfig config, Supplier<String> autogenerateNameFunc) {
         methodInfoMap.put(key, config);
         CachedAnnoConfig cac = config.getCachedAnnoConfig();
-        if (cac != null && !CacheConsts.isUndefined(cac.getName())) {
-            cacheNameMap.put(cac.getArea() + "_" + cac.getName(), cac);
+        if (cac != null) {
+            if (CacheConsts.isUndefined(cac.getName()) && autogenerateNameFunc != null) {
+                cac.setName(autogenerateNameFunc.get());
+            }
+            if (!CacheConsts.isUndefined(cac.getName())) {
+                cacheNameMap.put(cac.getArea() + "_" + cac.getName(), cac);
+            }
         }
     }
 

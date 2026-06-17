@@ -25,7 +25,8 @@ public @interface CacheInvalidate {
      * The name of this Cache instance which need a remove operation.
      * @return the name of the cache which need a remove operation
      */
-    String name();
+    // todo: add features
+    String name() default CacheConsts.UNDEFINED_STRING;
 
     /**
      * Specify the key by expression script, optional. If not specified,

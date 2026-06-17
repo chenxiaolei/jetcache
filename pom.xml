@@ -6,7 +6,7 @@
     <groupId>com.alicp.jetcache</groupId>
     <artifactId>jetcache-build</artifactId>
     <packaging>pom</packaging>
-    <version>2.7.9</version>
+    <version>2.7.9-CL-01</version>
 
     <name>jetcache</name>
     <description>a Java cache abstraction which provides consistent use for various caching solutions</description>
@@ -51,6 +51,7 @@
         <connection>scm:git:https://github.com/alibaba/jetcache.git</connection>
         <url>https://github.com/alibaba/jetcache</url>
     </scm>
+
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

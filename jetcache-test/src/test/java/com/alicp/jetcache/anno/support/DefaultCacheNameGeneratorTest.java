@@ -46,21 +46,21 @@ public class DefaultCacheNameGeneratorTest {
         Method m4 = C1.class.getMethod("foo3", byte.class, short.class, char.class, int.class, long.class, float.class, double.class, boolean.class);
 
         String s1 = "s.DefaultCacheNameGeneratorTest$C1." + m1.getName() + "()";
-        String s2 = g.generateCacheName(m1, null);
+        String s2 = g.generateCacheName(m1, null, null);
         assertEquals(s1, s2);
 
         s1 = "s.DefaultCacheNameGeneratorTest$C1." + m2.getName() + "(Ls.DefaultCacheNameGeneratorTest$I1;)";
-        s2 = g.generateCacheName(m2, null);
+        s2 = g.generateCacheName(m2, null, null);
         assertEquals(s1, s2);
 
         g = new DefaultCacheNameGenerator(null);
         s1 = "c.a.j.a.s.DefaultCacheNameGeneratorTest$C1." + m3.getName() + "([Lc.a.j.a.s.DefaultCacheNameGeneratorTest$I1;)";
-        s2 = g.generateCacheName(m3, null);
+        s2 = g.generateCacheName(m3, null, null);
         assertEquals(s1, s2);
 
         g = new DefaultCacheNameGenerator(hidePack);
         s1 = "s.DefaultCacheNameGeneratorTest$C1." + m4.getName() + "(BSCIJFDZ)";
-        s2 = g.generateCacheName(m4, null);
+        s2 = g.generateCacheName(m4, null, null);
         assertEquals(s1, s2);
     }
 

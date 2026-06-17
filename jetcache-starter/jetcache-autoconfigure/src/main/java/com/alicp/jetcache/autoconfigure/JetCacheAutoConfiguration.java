@@ -2,11 +2,7 @@ package com.alicp.jetcache.autoconfigure;
 
 import com.alicp.jetcache.CacheManager;
 import com.alicp.jetcache.SimpleCacheManager;
-import com.alicp.jetcache.anno.support.EncoderParser;
-import com.alicp.jetcache.anno.support.GlobalCacheConfig;
-import com.alicp.jetcache.anno.support.JetCacheBaseBeans;
-import com.alicp.jetcache.anno.support.KeyConvertorParser;
-import com.alicp.jetcache.anno.support.SpringConfigProvider;
+import com.alicp.jetcache.anno.support.*;
 import com.alicp.jetcache.support.StatInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -46,12 +42,15 @@ public class JetCacheAutoConfiguration {
             @Autowired GlobalCacheConfig globalCacheConfig,
             @Autowired(required = false) EncoderParser encoderParser,
             @Autowired(required = false) KeyConvertorParser keyConvertorParser,
-            @Autowired(required = false) Consumer<StatInfo> metricsCallback) {
+            @Autowired(required = false) Consumer<StatInfo> metricsCallback,
+            @Autowired(required = false) CacheNameGenerator cacheNameGenerator
+
+    ) {
         return new JetCacheBaseBeans().springConfigProvider(applicationContext, globalCacheConfig,
-                encoderParser, keyConvertorParser, metricsCallback);
+                encoderParser, keyConvertorParser, metricsCallback, cacheNameGenerator);
     }
 
-    @Bean(name = "jcCacheManager",destroyMethod = "close")
+    @Bean(name = "jcCacheManager", destroyMethod = "close")
     @ConditionalOnMissingBean
     public SimpleCacheManager cacheManager(@Autowired SpringConfigProvider springConfigProvider) {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
