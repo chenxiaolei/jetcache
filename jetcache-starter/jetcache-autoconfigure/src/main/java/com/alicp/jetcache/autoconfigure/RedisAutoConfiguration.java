@@ -111,7 +111,7 @@ public class RedisAutoConfiguration {
 
             Map<String, Object> cluster = ct.subTree("cluster"/*there is no dot*/).getProperties();
             String host = ct.getProperty("host", (String) null);
-            int port = Integer.parseInt(ct.getProperty("port", "0"));
+            int port = Integer.parseInt(ct.getProperty("port", "6379"));
             int timeout = Integer.parseInt(ct.getProperty("timeout", String.valueOf(Protocol.DEFAULT_TIMEOUT)));
             int connectionTimeout = Integer.parseInt(ct.getProperty("connectionTimeout", String.valueOf(timeout)));
             int soTimeout = Integer.parseInt(ct.getProperty("soTimeout", String.valueOf(timeout)));
